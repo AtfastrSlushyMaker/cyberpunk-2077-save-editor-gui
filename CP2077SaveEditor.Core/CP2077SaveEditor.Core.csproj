@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Save editing logic shared by the WinForms and WPF front ends (no UI dependencies). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>CP2077SaveEditor</RootNamespace>
+    <Platforms>x64</Platforms>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\*.json;Resources\*.preset" LogicalName="CP2077SaveEditor.Resources.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="CP2077SaveEditor" />
+    <InternalsVisibleTo Include="CP2077SaveEditor.Wpf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WolvenKit\WolvenKit.Common\WolvenKit.Common.csproj" />
+    <ProjectReference Include="..\WolvenKit\WolvenKit.Core\WolvenKit.Core.csproj" />
+    <ProjectReference Include="..\WolvenKit\WolvenKit.RED4\WolvenKit.RED4.csproj" />
+  </ItemGroup>
+
+</Project>

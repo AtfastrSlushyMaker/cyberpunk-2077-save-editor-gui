@@ -1,0 +1,63 @@
+<UserControl x:Class="CP2077SaveEditor.Wpf.Views.QuestFactsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CP2077SaveEditor.Wpf.ViewModels"
+             xmlns:c="clr-namespace:CP2077SaveEditor.Wpf.Controls">
+    <Grid Margin="28,24,20,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="16" />
+            <ColumnDefinition Width="320" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.ColumnSpan="3" Margin="0,0,0,16">
+            <TextBlock Text="QUEST FACTS" Style="{StaticResource H1}" />
+            <TextBlock Text="Facts are the game's quest and story switches. Edit with care: wrong values can break quests." Style="{StaticResource Dim}" Margin="0,4,0,0" />
+            <TextBlock Text="{Binding Notice}" Foreground="{StaticResource CyanBrush}" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Visibility="{Binding Notice, Converter={StaticResource NullToCollapsed}}" />
+        </StackPanel>
+
+        <DockPanel Grid.Row="1">
+            <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged, Delay=150}" Width="320" HorizontalAlignment="Left" Style="{StaticResource SearchBox}" Tag="Search 6,000+ facts…" />
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource Dim}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+            <ListBox ItemsSource="{Binding RowsView}" SelectedItem="{Binding SelectedFact}" Style="{StaticResource RowList}" KeyDown="Facts_KeyDown">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:FactRow}">
+                        <DockPanel>
+                            <c:NumberBox DockPanel.Dock="Right" Width="150" Height="28" Value="{Binding Value}" Minimum="0" Maximum="4294967295" ShowFill="False" />
+                            <TextBlock Text="{Binding Name}" FontFamily="{StaticResource MonoFont}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
+
+        <StackPanel Grid.Row="1" Grid.Column="2">
+            <ContentControl Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="ADD OR SET A FACT" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,12" />
+                    <TextBlock Text="NAME" Style="{StaticResource Label}" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding NewFactName, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" />
+                    <TextBlock Text="VALUE" Style="{StaticResource Label}" Margin="0,10,0,4" />
+                    <c:NumberBox Value="{Binding NewFactValue}" Minimum="0" Maximum="4294967295" ShowFill="False" />
+                    <Button Content="SET FACT" Style="{StaticResource PrimaryButton}" Command="{Binding AddFactCommand}" Margin="0,12,0,0" />
+                </StackPanel>
+            </ContentControl>
+            <ContentControl Style="{StaticResource Card}" Margin="0,16,0,0">
+                <StackPanel>
+                    <TextBlock Text="SHORTCUTS" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,12" />
+                    <Button Content="Enable secret ending" Command="{Binding SecretEndingCommand}" Margin="0,0,0,8" />
+                    <Button Content="Make everyone romanceable" Command="{Binding AllRomanceableCommand}" Margin="0,0,0,8" />
+                    <Button Content="Export facts…" Command="{Binding ExportCommand}" Margin="0,0,0,8" />
+                    <Button Content="DELETE SELECTED FACT" Style="{StaticResource DangerButton}" Command="{Binding RemoveFactCommand}" />
+                </StackPanel>
+            </ContentControl>
+        </StackPanel>
+    </Grid>
+</UserControl>
