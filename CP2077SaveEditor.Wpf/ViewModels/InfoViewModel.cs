@@ -83,7 +83,7 @@ public sealed partial class InfoViewModel : PageViewModel
     private async Task InstallUpdateAsync()
     {
         if (Update is not { } update || IsBusy) return;
-        if (update.ZipUrl == null)
+        if (update.DownloadUrl == null)
         {
             UpdateService.OpenUrl(update.PageUrl);
             return;

@@ -1,0 +1,47 @@
+# Builds the single-file editor and publishes it as a GitHub release when a version tag (e.g. v1.1.0) is pushed.
+# The release gets CP2077SaveEditor.exe (the editor's update check downloads this file) plus GitHub's source archives.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Apply the WolvenKit patch for patch 2.5
+        shell: pwsh
+        run: ./tools/setup.ps1
+
+      - name: Publish
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '0.0.0' }
+          dotnet publish CP2077SaveEditor.Wpf/CP2077SaveEditor.Wpf.csproj -c Release -r win-x64 -o publish -p:Version=$version
+          Move-Item publish/CP2077SaveEditor.Wpf.exe publish/CP2077SaveEditor.exe
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: CP2077SaveEditor
+          path: publish/CP2077SaveEditor.exe
+
+      - name: Create release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: publish/CP2077SaveEditor.exe
+          generate_release_notes: true

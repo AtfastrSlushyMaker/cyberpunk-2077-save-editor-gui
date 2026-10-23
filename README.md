@@ -48,9 +48,12 @@ interface with real item names and icons.
 
 ## Download and use
 
-1. Download the latest release zip and extract it anywhere (keep the files together).
-2. Run **CP2077SaveEditor.Wpf.exe**. No install and no .NET runtime needed.
-3. Pick a save, make changes, then press **Save changes** (or Ctrl+S).
+1. Download **CP2077SaveEditor.exe** from the [latest release](https://github.com/AtfastrSlushyMaker/cyberpunk-2077-save-editor-gui/releases/latest).
+   It is a single file: no install, no .NET runtime, put it anywhere.
+2. Run it, pick a save, make changes, then press **Save changes** (or Ctrl+S).
+3. The editor tells you when a new version is out and can update itself (Info page).
+
+Prefer to build it yourself? The release page also has the source code, or see [Building from source](#building-from-source).
 
 The first start takes about a minute in the background to read item names and icons from your game. After that
 the editor starts instantly. The data is rebuilt automatically after a game update.
@@ -87,6 +90,9 @@ cd cyberpunk-2077-save-editor-gui
 dotnet build CP2077SaveEditor.Wpf -c Release
 dotnet publish CP2077SaveEditor.Wpf -c Release -r win-x64 -o publish/wpf   # single-file release
 ```
+
+Releases are built by GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml)): pushing a
+tag such as `v1.1.0` builds the exe and publishes it as a release.
 
 Projects:
 

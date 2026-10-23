@@ -24,10 +24,16 @@
   </PropertyGroup>
 
   <!-- DirectXTexNet locates its native DLL next to its own assembly file, which has no path inside a single-file
-       bundle, so it (with the Ijwhost.dll C++/CLI shim) ships beside the exe. Kraken builds for macOS/Linux are not needed on Windows. -->
+       bundle. The three DLLs are embedded instead and unpacked on first use (Services/NativeLibraries.cs), so the
+       release is one exe. Kraken builds for macOS/Linux are not needed on Windows. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\WolvenKit\WolvenKit.Common\lib\DirectXTexNet.dll" LogicalName="native/DirectXTexNet.dll" Visible="false" />
+    <EmbeddedResource Include="..\WolvenKit\WolvenKit.Common\lib\DirectXTexNetImpl.dll" LogicalName="native/lib/DirectXTexNetImpl.dll" Visible="false" />
+    <EmbeddedResource Include="..\WolvenKit\WolvenKit.Common\lib\Ijwhost.dll" LogicalName="native/lib/Ijwhost.dll" Visible="false" />
+  </ItemGroup>
   <Target Name="AdjustPublishedFiles" AfterTargets="ComputeResolvedFilesToPublishList">
     <ItemGroup>
-      <ResolvedFileToPublish Update="@(ResolvedFileToPublish)" Condition="$([System.String]::Copy('%(Filename)').StartsWith('DirectXTexNet')) Or '%(Filename)' == 'Ijwhost'" ExcludeFromSingleFile="true" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.String]::Copy('%(Filename)').StartsWith('DirectXTexNet')) Or '%(Filename)' == 'Ijwhost' Or '%(RelativePath)' == 'lib\COPYING'" />
       <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Filename)' == 'libkraken' Or '%(Extension)' == '.pdb'" />
     </ItemGroup>
   </Target>

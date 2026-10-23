@@ -26,6 +26,8 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        Services.NativeLibraries.Register();
+
         // Headless mode used by GameDataService to build the game data index in a separate process.
         if (e.Args.Length == 2 && e.Args[0] is Services.GameDataService.BuildIndexSwitch or Services.GameDataService.BuildIconsSwitch)
         {

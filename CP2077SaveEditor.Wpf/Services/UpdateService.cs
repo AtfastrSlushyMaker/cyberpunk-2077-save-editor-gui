@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
@@ -10,11 +9,11 @@ using System.Threading.Tasks;
 namespace CP2077SaveEditor.Wpf.Services;
 
 /// <summary>A newer release on GitHub.</summary>
-public sealed record UpdateInfo(Version Version, string Tag, string PageUrl, string? ZipUrl, string Notes);
+public sealed record UpdateInfo(Version Version, string Tag, string PageUrl, string? DownloadUrl, string Notes);
 
 /// <summary>
-/// Checks the project's GitHub releases for a newer version and installs it: the release zip is downloaded and
-/// extracted, then a small script waits for the editor to close, copies the new files over and starts it again.
+/// Checks the project's GitHub releases for a newer version and installs it: the new exe is downloaded and
+/// a small script waits for the editor to close, puts it in place and starts it again.
 /// </summary>
 public static class UpdateService
 {
@@ -51,27 +50,26 @@ public static class UpdateService
             return null;
         }
 
-        var zip = root.TryGetProperty("assets", out var assets)
+        var exe = root.TryGetProperty("assets", out var assets)
             ? assets.EnumerateArray()
                 .Select(a => (Name: a.GetProperty("name").GetString() ?? "", Url: a.GetProperty("browser_download_url").GetString()))
-                .FirstOrDefault(a => a.Name.EndsWith("win-x64.zip", StringComparison.OrdinalIgnoreCase) || a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)).Url
+                .FirstOrDefault(a => a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).Url
             : null;
-        return new UpdateInfo(version, tag, root.GetProperty("html_url").GetString() ?? ReleasesUrl, zip,
+        return new UpdateInfo(version, tag, root.GetProperty("html_url").GetString() ?? ReleasesUrl, exe,
             root.TryGetProperty("body", out var body) ? body.GetString() ?? "" : "");
     }
 
     /// <summary>
-    /// Downloads and unpacks the update, then starts the script that replaces this build once the editor exits.
-    /// The caller shuts the editor down after this returns.
+    /// Downloads the new exe, then starts the script that puts it in place of this one once the editor exits and
+    /// starts it again. The caller shuts the editor down after this returns.
     /// </summary>
     public static async Task PrepareInstallAsync(UpdateInfo update, IProgress<string>? progress = null)
     {
-        if (update.ZipUrl == null)
+        if (update.DownloadUrl == null)
         {
             throw new InvalidOperationException("This release has no download for Windows.");
         }
-        var exe = Environment.ProcessPath ?? throw new InvalidOperationException("Unknown program location.");
-        var appDir = Path.GetDirectoryName(exe)!;
+        var current = Environment.ProcessPath ?? throw new InvalidOperationException("Unknown program location.");
         var work = Path.Combine(Path.GetTempPath(), "CP2077SaveEditor-update");
         if (Directory.Exists(work))
         {
@@ -80,30 +78,26 @@ public static class UpdateService
         Directory.CreateDirectory(work);
 
         progress?.Report($"Downloading {update.Tag}…");
-        var zipPath = Path.Combine(work, "update.zip");
-        await using (var source = await s_http.GetStreamAsync(update.ZipUrl))
-        await using (var target = File.Create(zipPath))
+        var download = Path.Combine(work, "CP2077SaveEditor.exe");
+        await using (var source = await s_http.GetStreamAsync(update.DownloadUrl))
+        await using (var target = File.Create(download))
         {
             await source.CopyToAsync(target);
         }
+        if (new FileInfo(download).Length < 1_000_000)
+        {
+            throw new InvalidDataException("The download is incomplete.");
+        }
 
-        progress?.Report("Unpacking…");
-        var extracted = Path.Combine(work, "files");
-        ZipFile.ExtractToDirectory(zipPath, extracted);
-        // the zip may hold the files directly or inside one folder
-        var payload = Directory.GetFiles(extracted, "*.exe").Length > 0 ? extracted
-            : Directory.GetDirectories(extracted).FirstOrDefault(d => Directory.GetFiles(d, "*.exe").Length > 0)
-              ?? throw new InvalidDataException("The download does not contain the editor.");
-        var newExe = Directory.GetFiles(payload, "*.exe").First();
-
+        // replaces the exe under its current name, so shortcuts keep working
         var script = Path.Combine(work, "install.cmd");
         File.WriteAllText(script, $"""
             @echo off
-            rem Waits for the editor to close, copies the new version over it and starts it again.
+            rem Waits for the editor to close, puts the new version in its place and starts it again.
             :wait
             tasklist /FI "PID eq {Environment.ProcessId}" | find "{Environment.ProcessId}" >nul && (timeout /t 1 /nobreak >nul & goto wait)
-            robocopy "{payload}" "{appDir}" /E /R:5 /W:1 >nul
-            start "" "{Path.Combine(appDir, Path.GetFileName(newExe))}"
+            copy /Y "{download}" "{current}" >nul
+            start "" "{current}"
             """);
         Process.Start(new ProcessStartInfo("cmd.exe", $"/c \"{script}\"") { CreateNoWindow = true, UseShellExecute = false, WorkingDirectory = work });
     }
