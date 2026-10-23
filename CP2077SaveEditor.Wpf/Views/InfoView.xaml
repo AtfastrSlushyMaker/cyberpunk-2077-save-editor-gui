@@ -25,19 +25,15 @@
                         Command="{Binding OpenLinkCommand}" CommandParameter="{Binding RepositoryUrl}" />
             </Grid>
 
-            <!-- Updates -->
+            <!-- Downloads -->
             <ContentControl Style="{StaticResource Card}" Margin="0,0,0,24">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Content="CHECK NOW" Command="{Binding CheckForUpdatesCommand}" Margin="0,0,8,0" />
-                        <Button Content="UPDATE NOW" Style="{StaticResource PrimaryButton}" Command="{Binding InstallUpdateCommand}"
-                                Visibility="{Binding HasUpdate, Converter={StaticResource BoolToVisibility}}" Margin="0,0,8,0" />
-                        <Button Content="RELEASES" Command="{Binding OpenReleasesCommand}" />
-                    </StackPanel>
+                    <Button DockPanel.Dock="Right" Content="DOWNLOAD LATEST VERSION" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding OpenReleasesCommand}" VerticalAlignment="Center" Margin="16,0,0,0"
+                            ToolTip="Open the latest release in your browser" />
                     <StackPanel>
-                        <TextBlock Text="UPDATES" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,6" />
-                        <TextBlock Text="{Binding UpdateStatus}" FontSize="13" TextWrapping="Wrap" />
-                        <CheckBox Content="Check for updates when the editor starts" Style="{StaticResource Switch}" IsChecked="{Binding CheckOnStart}" Margin="0,10,0,0" />
+                        <TextBlock Text="DOWNLOADS" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,6" />
+                        <TextBlock Text="Get the latest version from the releases page in your browser." FontSize="13" TextWrapping="Wrap" />
                     </StackPanel>
                 </DockPanel>
             </ContentControl>

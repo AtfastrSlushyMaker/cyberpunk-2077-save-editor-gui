@@ -19,9 +19,6 @@ public sealed class AppSettings
     /// <summary>Extra folders shown in the save browser next to the game's own save folder.</summary>
     public List<string> LibraryFolders { get; set; } = new();
 
-    /// <summary>Check GitHub for a newer release on start.</summary>
-    public bool CheckForUpdates { get; set; } = true;
-
     private static AppSettings Load()
     {
         try

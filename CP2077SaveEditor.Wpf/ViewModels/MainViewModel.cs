@@ -39,18 +39,6 @@ public sealed partial class MainViewModel : ObservableObject
     public InfoViewModel Info { get; }
     public ObservableCollection<PageViewModel> Pages { get; }
 
-    /// <summary>Checks GitHub for a newer release on start (if enabled); the status bar then offers it.</summary>
-    public async Task CheckForUpdatesOnStartAsync()
-    {
-        if (AppSettings.Current.CheckForUpdates)
-        {
-            await Info.CheckForUpdatesAsync();
-        }
-    }
-
-    [RelayCommand]
-    private void ShowInfo() => CurrentPage = Info;
-
     [ObservableProperty]
     private PageViewModel _currentPage;
 

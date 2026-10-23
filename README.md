@@ -37,8 +37,8 @@ interface with real item names and icons.
   - Remove the **Phantom Liberty** flag from a save, and optionally remove Phantom Liberty items.
   - Allow Phantom Liberty items for saves without the expansion (at your own risk).
   - Unlock all fast travel points, fix a V stuck invulnerable, clear the Extra Wardrobe Slots blacklist.
-- **Info and updates.** Links to every project this editor builds on, and an update check that can download and
-  install a new release for you.
+- **Info and downloads.** Version information, credits for the projects this editor builds on, and a link to
+  download new releases in your browser.
 
 | Player | Inventory |
 | --- | --- |
@@ -51,7 +51,7 @@ interface with real item names and icons.
 1. Download **CP2077SaveEditor.exe** from the [latest release](https://github.com/AtfastrSlushyMaker/cyberpunk-2077-save-editor-gui/releases/latest).
    It is a single file: no install, no .NET runtime, put it anywhere.
 2. Run it, pick a save, make changes, then press **Save changes** (or Ctrl+S).
-3. The editor tells you when a new version is out and can update itself (Info page).
+3. To update, use **Download latest version** on the Info page, close the editor, and replace the old exe with the new download.
 
 Prefer to build it yourself? The release page also has the source code, or see [Building from source](#building-from-source).
 

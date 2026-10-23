@@ -1,5 +1,5 @@
 # Builds the single-file editor and publishes it as a GitHub release when a version tag (e.g. v1.1.0) is pushed.
-# The release gets CP2077SaveEditor.exe (the editor's update check downloads this file) plus GitHub's source archives.
+# The release gets CP2077SaveEditor.exe plus GitHub's source archives.
 name: Release
 
 on:
