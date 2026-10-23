@@ -1,0 +1,23 @@
+<Window x:Class="CP2077SaveEditor.Wpf.Views.ImagePreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Preview" SizeToContent="WidthAndHeight" ResizeMode="NoResize" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display" Foreground="{StaticResource TextBrush}"
+        MouseLeftButtonUp="Close_Click" KeyDown="Window_KeyDown" Cursor="Hand">
+
+    <!-- Large item icon; click anywhere or press Esc to close -->
+    <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" Margin="12">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="24" ShadowDepth="0" Opacity="0.6" Color="Black" />
+        </Border.Effect>
+        <StackPanel Margin="24,18,24,16">
+            <TextBlock x:Name="TitleText" Style="{StaticResource H2}" Margin="0,0,0,2" />
+            <TextBlock x:Name="SubtitleText" Style="{StaticResource Dim}" FontFamily="{StaticResource MonoFont}" FontSize="11" Margin="0,0,0,14" />
+            <Border Background="#0FFFFFFF" Padding="16">
+                <Image x:Name="PreviewImage" Stretch="Uniform" MaxWidth="720" MaxHeight="420" RenderOptions.BitmapScalingMode="HighQuality" />
+            </Border>
+            <TextBlock Text="Click anywhere or press Esc to close" Style="{StaticResource Dim}" FontSize="11" Margin="0,10,0,0" HorizontalAlignment="Center" />
+        </StackPanel>
+    </Border>
+</Window>

@@ -3,27 +3,35 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:c="clr-namespace:CP2077SaveEditor.Wpf.Controls"
         xmlns:vm="clr-namespace:CP2077SaveEditor.Wpf.ViewModels"
-        Title="Add item" Width="720" Height="620" ResizeMode="NoResize" ShowInTaskbar="False"
+        Title="Add item" Width="1040" Height="720" ResizeMode="NoResize" ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         UseLayoutRounding="True" TextOptions.TextFormattingMode="Display" Foreground="{StaticResource TextBrush}">
+
+    <Window.Resources>
+        <!-- Phantom Liberty items in a save without the expansion are dimmed and cannot be added -->
+        <Style x:Key="CatalogRow" TargetType="ListBoxItem" BasedOn="{StaticResource RowItem}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                    <Setter Property="Opacity" Value="0.4" />
+                    <Setter Property="ToolTip" Value="Phantom Liberty item: this save does not have the expansion. Adding it can crash the game. You can allow these items in Extras." />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
 
     <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" Margin="12">
         <Border.Effect>
             <DropShadowEffect BlurRadius="24" ShadowDepth="0" Opacity="0.6" Color="Black" />
         </Border.Effect>
         <DockPanel Margin="24,20,24,20">
-            <TextBlock DockPanel.Dock="Top" Text="ADD ITEM" Style="{StaticResource H1}" FontSize="22" MouseLeftButtonDown="Header_MouseLeftButtonDown" />
+            <Grid DockPanel.Dock="Top" Background="Transparent" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <TextBlock Text="ADD ITEM" Style="{StaticResource H1}" FontSize="22" />
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource Dim}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,4" />
+            </Grid>
 
             <!-- Footer -->
             <Grid DockPanel.Dock="Bottom" Margin="0,14,0,0">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsStackable, Converter={StaticResource BoolToVisibility}}" Margin="0,0,16,0">
-                        <TextBlock Text="QUANTITY" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                        <c:NumberBox Value="{Binding Quantity}" Minimum="1" Maximum="999999" ShowFill="False" Width="150" />
-                    </StackPanel>
-                    <CheckBox Content="Set to Tier 5++" Style="{StaticResource Switch}" IsChecked="{Binding SetMaxTier}"
-                              Visibility="{Binding CanHaveTier, Converter={StaticResource BoolToVisibility}}" />
-                </StackPanel>
+                <CheckBox Content="Show unnamed records (templates and unused items)" Style="{StaticResource Switch}" IsChecked="{Binding ShowUnnamed}" VerticalAlignment="Center" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="CANCEL" IsCancel="True" Margin="0,0,8,0" />
                     <Button Content="ADD" Style="{StaticResource PrimaryButton}" IsDefault="True" IsEnabled="{Binding CanAdd}" Click="Add_Click" MinWidth="110" />
@@ -34,7 +42,7 @@
             <Grid DockPanel.Dock="Top" Margin="0,14,0,10">
                 <TextBox x:Name="SearchBox" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="30,7,8,7" />
                 <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Foreground="{StaticResource TextDimBrush}" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" />
-                <TextBlock Text="Search 10,000+ items, e.g. &quot;mantis blades&quot; or &quot;Items.Preset_Overture&quot;…" Foreground="{StaticResource TextDimBrush}" Margin="31,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                <TextBlock Text="Search by name or record, e.g. &quot;mantis blades&quot; or &quot;Preset_Overture&quot;" Foreground="{StaticResource TextDimBrush}" Margin="32,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed" />
@@ -48,29 +56,132 @@
                 </TextBlock>
             </Grid>
             <ListBox DockPanel.Dock="Top" ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter}" DisplayMemberPath="Name"
-                     Style="{StaticResource ChipList}" Margin="0,0,0,4" />
+                     Style="{StaticResource ChipList}" Margin="0,0,0,2" />
+            <Border DockPanel.Dock="Top" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="0,8,0,0" Margin="0,0,0,4">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding SubFilters.Count}" Value="1">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <ListBox ItemsSource="{Binding SubFilters}" SelectedItem="{Binding SelectedSubFilter}" DisplayMemberPath="Name" Style="{StaticResource ChipList}" FontSize="12" />
+            </Border>
 
-            <ListBox ItemsSource="{Binding CatalogView}" SelectedItem="{Binding SelectedItem}" Style="{StaticResource RowList}" MouseDoubleClick="List_MouseDoubleClick">
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type vm:AddItemRow}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="64" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="100" />
-                            </Grid.ColumnDefinitions>
-                            <Border Width="56" Height="32" Background="#14FFFFFF" HorizontalAlignment="Left">
-                                <Image Source="{Binding Icon}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis" />
-                                <TextBlock Text="{Binding Record}" FontSize="10" Opacity="0.6" FontFamily="{StaticResource MonoFont}" TextTrimming="CharacterEllipsis" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="320" />
+                </Grid.ColumnDefinitions>
+
+                <ListBox ItemsSource="{Binding CatalogView}" SelectedItem="{Binding SelectedItem}" Style="{StaticResource RowList}"
+                         ItemContainerStyle="{StaticResource CatalogRow}" MouseDoubleClick="List_MouseDoubleClick">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:AddItemRow}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="88" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="150" />
+                                </Grid.ColumnDefinitions>
+                                <Border Width="78" Height="44" Background="#14FFFFFF" HorizontalAlignment="Left">
+                                    <Grid>
+                                        <Image Source="{Binding Icon}" Stretch="Uniform" Margin="2" RenderOptions.BitmapScalingMode="HighQuality" />
+                                        <TextBlock Text="&#xE7B8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Opacity="0.3"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip="The game has no icon for this item"
+                                                   Visibility="{Binding HasNoIcon, Converter={StaticResource BoolToVisibility}}" />
+                                    </Grid>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Name}" FontSize="13" TextTrimming="CharacterEllipsis" />
+                                        <Border Background="{StaticResource CyanBrush}" Padding="5,0" Margin="8,1,0,0" VerticalAlignment="Center"
+                                                Visibility="{Binding IsExpansion, Converter={StaticResource BoolToVisibility}}" ToolTip="Phantom Liberty item">
+                                            <TextBlock Text="PL" FontSize="10" FontWeight="Bold" Foreground="{StaticResource BgBrush}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Record}" FontSize="10" Opacity="0.6" FontFamily="{StaticResource MonoFont}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Kind}" Opacity="0.8" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Details}" Opacity="0.6" FontSize="11" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Details of the selected item -->
+                <Border Grid.Column="1" Margin="12,0,0,0" Background="{StaticResource PanelRaisedBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1">
+                    <Grid>
+                        <TextBlock Text="Select an item to see its details" Style="{StaticResource Dim}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Visibility="{Binding HasSelection, Converter={StaticResource InverseBoolToVisibility}}" />
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel Margin="16">
+                                <StackPanel DataContext="{Binding SelectedItem}">
+                                    <Border Height="130" Background="#0FFFFFFF" Cursor="Hand" ToolTip="Click to enlarge" MouseLeftButtonUp="Preview_Click">
+                                        <Grid>
+                                            <Image Source="{Binding Icon}" Stretch="Uniform" Margin="10" RenderOptions.BitmapScalingMode="HighQuality" />
+                                            <TextBlock Text="&#xE7B8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="32" Opacity="0.25"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding HasNoIcon, Converter={StaticResource BoolToVisibility}}" />
+                                            <TextBlock Text="&#xE740;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12" Opacity="0.6" Margin="6"
+                                                       HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="{Binding Icon, Converter={StaticResource NullToCollapsed}}" />
+                                        </Grid>
+                                    </Border>
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource H2}" TextWrapping="Wrap" Margin="0,12,0,2" />
+                                    <TextBlock Style="{StaticResource Dim}">
+                                        <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " /><Run Text="{Binding TypeName, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <TextBox Text="{Binding Variants[0].Item.Record, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                             Margin="0,8,0,0" Padding="6,4" ToolTip="Record name (select to copy)" />
+
+                                    <Border Background="{StaticResource CyanSoftBrush}" BorderBrush="{StaticResource CyanBrush}" BorderThickness="1" Padding="10,8" Margin="0,12,0,0"
+                                            Visibility="{Binding IsExpansion, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" Text="Phantom Liberty item. It needs the expansion to work in game." />
+                                    </Border>
+                                    <Border BorderBrush="{StaticResource RedBrush}" BorderThickness="1" Padding="10,8" Margin="0,8,0,0"
+                                            Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource RedBrush}"
+                                                   Text="This save does not have Phantom Liberty, so this item is locked: adding it can crash the game. To add it anyway, turn on &quot;Allow Phantom Liberty items&quot; in Extras." />
+                                    </Border>
+
+                                    <!-- Grades (one record per grade) -->
+                                    <StackPanel Margin="0,16,0,0" Visibility="{Binding HasGrades, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock Text="GRADES TO ADD" Style="{StaticResource Label}" Margin="0,0,0,8" />
+                                        <ItemsControl ItemsSource="{Binding Variants}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:AddItemVariant}">
+                                                    <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" ToolTip="{Binding Tooltip}" Style="{StaticResource ChipToggle}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <Button Content="ALL GRADES" Command="{Binding DataContext.SelectAllGradesCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,0,8,0" Padding="12,5" />
+                                            <Button Content="BEST ONLY" Command="{Binding DataContext.SelectBestGradeCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="12,5" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Margin="0,16,0,0">
+                                    <StackPanel Visibility="{Binding IsStackable, Converter={StaticResource BoolToVisibility}}" Margin="0,0,0,12">
+                                        <TextBlock Text="QUANTITY" Style="{StaticResource Label}" Margin="0,0,0,6" />
+                                        <c:NumberBox Value="{Binding Quantity}" Minimum="1" Maximum="999999" ShowFill="False" />
+                                    </StackPanel>
+                                    <CheckBox Content="Set to Tier 5++" Style="{StaticResource Switch}" IsChecked="{Binding SetMaxTier}"
+                                              Visibility="{Binding CanHaveTier, Converter={StaticResource BoolToVisibility}}" />
+                                </StackPanel>
                             </StackPanel>
-                            <TextBlock Grid.Column="2" Text="{Binding Type}" Opacity="0.7" FontSize="12" VerticalAlignment="Center" />
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Grid>
         </DockPanel>
     </Border>
 </Window>

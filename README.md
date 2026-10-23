@@ -12,7 +12,8 @@ interface with real item names and icons.
 - **Works with patch 2.5 saves.** Every save is re-written byte-for-byte identical when nothing was changed,
   including the new 2.5 stats format.
 - **Save browser.** All your saves as cards with screenshot, quest, level, life path and play time. Search by
-  quest, slot or life path.
+  quest, slot or life path. Keep your own save library outside the game folder (import saves, or show any other
+  folder), and copy or move a save into the game's saves so it appears in Load Game.
 - **Safe saving.** Before writing, a summary shows exactly which parts of the save changed. Save to a new slot
   (recommended), or overwrite with an automatic backup in `Documents\CP2077 Save Editor\Backups`.
 - **Real names and icons from your own game.** On first start the editor finds your Cyberpunk 2077 install
@@ -21,15 +22,23 @@ interface with real item names and icons.
 - **Player.** Life path, level, Street Cred, attributes, skills, money, and quick presets (max everything, max
   attributes, refund attributes…).
 - **Inventory.** Every container (V's inventory, car stash…), filters, search, 2.0 tiers (Tier 1 to Tier 5++),
-  quantities, quest-item flag, remove items, "upgrade all", and an **Add item** catalog of 10,000+ items.
+  quantities, quest-item flag, remove items, "upgrade all", and an **Add item** catalog of the game's items:
+  - sub-filters (pistols, SMGs, katanas… clothing slots, cyberware by body area),
+  - one entry per item with all its grades (add one grade, several, or all of them at once),
+  - large previews (click an icon), and Phantom Liberty items locked for saves without the expansion.
 - **Appearance.** Edit appearance values, and save or load appearance presets (old `.preset` files still load).
-- **Vehicles.** Unlock or lock any vehicle.
-- **Quest facts.** Search, edit, add, remove and export quest facts, plus shortcuts for the secret ending and
-  making every romance available.
+- **Vehicles.** Every player vehicle in your game version with its picture and brand. Unlock or lock one or all,
+  mark favorites, filter by cars, motorcycles, unlocked or locked.
+- **Quest facts.** Search, edit, add, remove and export quest facts, filter by main story, side jobs, gigs,
+  romance or Phantom Liberty, see and undo your edits, name suggestions when adding a fact, plus shortcuts for the
+  secret ending and making every romance available.
 - **Extras.**
   - Toggle the patch 2.5 **"modded save" flag** (the cog icon on the Load Game screen).
   - Remove the **Phantom Liberty** flag from a save, and optionally remove Phantom Liberty items.
+  - Allow Phantom Liberty items for saves without the expansion (at your own risk).
   - Unlock all fast travel points, fix a V stuck invulnerable, clear the Extra Wardrobe Slots blacklist.
+- **Info and updates.** Links to every project this editor builds on, and an update check that can download and
+  install a new release for you.
 
 | Player | Inventory |
 | --- | --- |

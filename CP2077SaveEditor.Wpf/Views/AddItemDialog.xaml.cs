@@ -25,5 +25,13 @@ public partial class AddItemDialog : Window
 
     private void List_MouseDoubleClick(object sender, MouseButtonEventArgs e) => Add_Click(sender, e);
 
+    private void Preview_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (ViewModel.SelectedItem is { } row)
+        {
+            ImagePreviewWindow.Show(this, row.Icon, row.Name, row.Variants[0].Item.Record);
+        }
+    }
+
     private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
 }

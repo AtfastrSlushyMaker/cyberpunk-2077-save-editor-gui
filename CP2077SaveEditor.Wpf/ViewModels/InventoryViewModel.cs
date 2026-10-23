@@ -321,124 +321,31 @@ public sealed partial class InventoryViewModel : PageViewModel
         {
             return;
         }
-        var addItem = new AddItemViewModel(IsFemale);
+        var addItem = new AddItemViewModel(IsFemale, SaveFlags.AdditionalContent(_session.Save).Count > 0);
         var dialog = new Views.AddItemDialog(addItem) { Owner = System.Windows.Application.Current.MainWindow };
-        if (dialog.ShowDialog() != true || addItem.Result is not { } choice)
+        if (dialog.ShowDialog() != true || addItem.Result is not { Count: > 0 } choices)
         {
             return;
         }
 
         try
         {
-            var item = InventoryEditor.Add(_session.Save, SelectedContainer.Container, choice.Item.Id, (uint)choice.Quantity);
-            if (choice.Tier is { } tier && InventoryEditor.HasTiers(choice.Item.Type))
+            ItemData? last = null;
+            foreach (var choice in choices)
             {
-                InventoryEditor.SetTier(_session.Save, item, tier);
+                last = InventoryEditor.Add(_session.Save, SelectedContainer.Container, choice.Item.Id, (uint)choice.Quantity);
+                if (choice.Tier is { } tier && InventoryEditor.HasTiers(choice.Item.Type))
+                {
+                    InventoryEditor.SetTier(_session.Save, last, tier);
+                }
             }
             Changed();
             LoadItems();
-            SelectedItem = Items.FirstOrDefault(r => ReferenceEquals(r.Item, item));
+            SelectedItem = Items.FirstOrDefault(r => ReferenceEquals(r.Item, last));
         }
         catch (Exception e)
         {
             UserPrompt.Notice("Could not add the item: " + e.Message, "Add item");
         }
-    }
-}
-
-/// <summary>Backs the Add item dialog: searchable catalog of all known items.</summary>
-public sealed partial class AddItemViewModel : ObservableObject
-{
-    public AddItemViewModel(bool female = false)
-    {
-        Rows = ItemCatalog.Addable.Select(i => new AddItemRow(i, female)).OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase).ToList();
-        _selectedFilter = Filters[0]; // must be set before the filter runs
-        CatalogView = CollectionViewSource.GetDefaultView(Rows);
-        CatalogView.Filter = o => Matches((AddItemRow)o);
-    }
-
-    public IReadOnlyList<AddItemRow> Rows { get; }
-    public ICollectionView CatalogView { get; }
-
-    public IReadOnlyList<TypeFilter> Filters => InventoryViewModel.AllFilters;
-
-    [ObservableProperty]
-    private TypeFilter _selectedFilter;
-
-    [ObservableProperty]
-    private string _search = "";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsStackable), nameof(CanHaveTier), nameof(CanAdd))]
-    private AddItemRow? _selectedItem;
-
-    [ObservableProperty]
-    private long _quantity = 1;
-
-    [ObservableProperty]
-    private bool _setMaxTier = true;
-
-    public bool IsStackable => SelectedItem != null && InventoryEditor.IsStackable(SelectedItem.Item.Id);
-    public bool CanHaveTier => SelectedItem != null && InventoryEditor.HasTiers(SelectedItem.Item.Type);
-    public bool CanAdd => SelectedItem != null;
-
-    partial void OnSearchChanged(string value) => CatalogView.Refresh();
-    partial void OnSelectedFilterChanged(TypeFilter value) => CatalogView.Refresh();
-
-    private bool Matches(AddItemRow row)
-    {
-        var item = row.Item;
-        if (SelectedFilter.Types.Length > 0 && !SelectedFilter.Types.Contains(item.Type))
-        {
-            return false;
-        }
-        if (string.IsNullOrWhiteSpace(Search))
-        {
-            return true;
-        }
-        var terms = Search.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return terms.All(t => row.Name.Contains(t, StringComparison.OrdinalIgnoreCase) || item.Record.Contains(t, StringComparison.OrdinalIgnoreCase));
-    }
-
-    public (CatalogItem Item, long Quantity, ItemTier? Tier)? Result =>
-        SelectedItem == null ? null : (SelectedItem.Item, IsStackable ? Quantity : 1, CanHaveTier && SetMaxTier ? ItemTier.Max : null);
-}
-
-/// <summary>One catalog entry in the Add item dialog, with its in-game name and (lazily loaded) icon.</summary>
-public sealed partial class AddItemRow : ObservableObject
-{
-    private readonly bool _female;
-    private BitmapSource? _icon;
-    private bool _iconRequested;
-
-    public AddItemRow(CatalogItem item, bool female)
-    {
-        Item = item;
-        _female = female;
-        Name = GameDataService.Instance.Index?.Get(item.Id)?.Name ?? item.DisplayName;
-    }
-
-    public CatalogItem Item { get; }
-    public string Name { get; }
-    public string Record => Item.Record;
-    public string Type => Item.Type;
-
-    public BitmapSource? Icon
-    {
-        get
-        {
-            if (!_iconRequested)
-            {
-                _iconRequested = true;
-                _ = LoadAsync();
-            }
-            return _icon;
-        }
-    }
-
-    private async Task LoadAsync()
-    {
-        _icon = await GameDataService.Instance.GetIconAsync(Item.Id, _female);
-        OnPropertyChanged(nameof(Icon));
     }
 }

@@ -40,6 +40,12 @@ public sealed record SaveSlot
     public DateTime SavedAt { get; init; }
     public bool IsModded { get; init; }
 
+    /// <summary>Where the save was found: "Game saves", "My library" or a folder the user added.</summary>
+    public string Source { get; init; } = "";
+
+    /// <summary>True for saves in the game's own save folder (the ones the game loads).</summary>
+    public bool IsGameSave { get; init; }
+
     /// <summary>The editor supports saves from patch 2.0 onwards.</summary>
     public bool IsSupported => GameVersion >= 2000;
 }
@@ -65,6 +71,72 @@ public static class SaveLibrary
             .OrderByDescending(s => s.SavedAt)
             .ToList();
     });
+
+    /// <summary>The editor's own save library: saves kept outside the game's folder (imported or copied there).</summary>
+    public static string LibraryRoot { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "CP2077 Save Editor", "Library");
+
+    public const string GameSourceName = "Game saves";
+    public const string LibrarySourceName = "My library";
+
+    /// <summary>Scans the game folder, the library and every extra folder, tagging each save with where it was found.</summary>
+    public static async Task<List<SaveSlot>> ScanAllAsync(string gameRoot, IEnumerable<string> extraFolders)
+    {
+        var sources = new List<(string Name, string Path, bool IsGame)> { (GameSourceName, gameRoot, true), (LibrarySourceName, LibraryRoot, false) };
+        sources.AddRange(extraFolders.Where(Directory.Exists).Select(f => (SourceName(f), f, false)));
+
+        var result = new List<SaveSlot>();
+        foreach (var (name, path, isGame) in sources)
+        {
+            result.AddRange((await ScanAsync(path)).Select(s => s with { Source = name, IsGameSave = isGame }));
+        }
+        return result.OrderByDescending(s => s.SavedAt).ToList();
+    }
+
+    /// <summary>Chip label of an added folder: its folder name.</summary>
+    public static string SourceName(string folder) => Path.GetFileName(folder.TrimEnd('\\', '/'));
+
+    /// <summary>Copies a save folder into the library; returns the new folder.</summary>
+    public static string CopyToLibrary(string folder)
+    {
+        Directory.CreateDirectory(LibraryRoot);
+        var name = Path.GetFileName(folder.TrimEnd('\\', '/'));
+        var target = Path.Combine(LibraryRoot, name);
+        for (var i = 2; Directory.Exists(target); i++)
+        {
+            target = Path.Combine(LibraryRoot, $"{name} ({i})");
+        }
+        CopyFolder(folder, target);
+        return target;
+    }
+
+    /// <summary>
+    /// Copies (or moves) a save into the game's save folder as the next free "ManualSave-N", the naming the game's
+    /// Load Game menu expects; returns the new folder.
+    /// </summary>
+    public static string CopyToGame(string folder, string gameRoot, bool move)
+    {
+        Directory.CreateDirectory(gameRoot);
+        var n = 0;
+        while (Directory.Exists(Path.Combine(gameRoot, $"ManualSave-{n}"))) n++;
+        var target = Path.Combine(gameRoot, $"ManualSave-{n}");
+        CopyFolder(folder, target);
+        if (move)
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+        return target;
+    }
+
+    /// <summary>Copies the files of a save folder (sav.dat, metadata, screenshot; no subfolders).</summary>
+    private static void CopyFolder(string from, string to)
+    {
+        Directory.CreateDirectory(to);
+        foreach (var file in Directory.GetFiles(from))
+        {
+            File.Copy(file, Path.Combine(to, Path.GetFileName(file)), overwrite: false);
+        }
+    }
 
     public static SaveSlot? TryRead(string folder)
     {
