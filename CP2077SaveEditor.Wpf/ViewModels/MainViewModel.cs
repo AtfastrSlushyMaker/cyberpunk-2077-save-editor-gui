@@ -14,6 +14,7 @@ public sealed partial class MainViewModel : ObservableObject
     public MainViewModel()
     {
         Browser = new SaveBrowserViewModel(OpenAsync);
+        Info = new InfoViewModel();
         Pages = new ObservableCollection<PageViewModel>
         {
             Browser,
@@ -23,6 +24,7 @@ public sealed partial class MainViewModel : ObservableObject
             new VehiclesViewModel(),
             new QuestFactsViewModel(),
             new ExtrasViewModel(),
+            Info,
         };
         foreach (var page in Pages)
         {
@@ -34,7 +36,20 @@ public sealed partial class MainViewModel : ObservableObject
     public static string Version { get; } = "v" + typeof(MainViewModel).Assembly.GetName().Version!.ToString(3);
 
     public SaveBrowserViewModel Browser { get; }
+    public InfoViewModel Info { get; }
     public ObservableCollection<PageViewModel> Pages { get; }
+
+    /// <summary>Checks GitHub for a newer release on start (if enabled); the status bar then offers it.</summary>
+    public async Task CheckForUpdatesOnStartAsync()
+    {
+        if (AppSettings.Current.CheckForUpdates)
+        {
+            await Info.CheckForUpdatesAsync();
+        }
+    }
+
+    [RelayCommand]
+    private void ShowInfo() => CurrentPage = Info;
 
     [ObservableProperty]
     private PageViewModel _currentPage;
@@ -139,6 +154,10 @@ public sealed partial class MainViewModel : ObservableObject
             foreach (var page in Pages)
             {
                 page.OnSessionChanged(session);
+            }
+            if (CurrentPage == Browser)
+            {
+                CurrentPage = Pages[1]; // start editing on the Player page
             }
             Status = $"Opened {slot.FolderName} in {watch.Elapsed.TotalSeconds:0.0}s";
         }

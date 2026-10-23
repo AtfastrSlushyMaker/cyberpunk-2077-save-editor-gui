@@ -9,7 +9,7 @@ using WolvenKit.RED4.Types;
 
 namespace CP2077SaveEditor.Editing;
 
-public sealed record VehicleEntry(string Record, string DisplayName, bool Unlocked);
+public sealed record VehicleEntry(string Record, string DisplayName, bool Unlocked, bool Favorite);
 
 /// <summary>A quest fact with its readable name (or hash when the name is not known).</summary>
 public sealed record FactEntryInfo(string Name, bool IsKnown, FactsTable Table, FactsTable.FactEntry Entry);
@@ -25,8 +25,11 @@ public static class WorldEditor
     private static vehicleGarageComponentPS? Garage(SaveFileHelper save) =>
         save.GetPSDataContainer()?.OfType<vehicleGarageComponentPS>().FirstOrDefault();
 
-    /// <summary>All known player vehicles with their unlocked state; null if the save has no garage data yet.</summary>
-    public static List<VehicleEntry>? Vehicles(SaveFileHelper save)
+    /// <summary>
+    /// All known player vehicles (the built-in list plus any extra records, e.g. found in the game database) with their
+    /// unlocked and favorite state; null if the save has no garage data yet.
+    /// </summary>
+    public static List<VehicleEntry>? Vehicles(SaveFileHelper save, IEnumerable<string>? extraRecords = null)
     {
         var garage = Garage(save);
         if (garage == null)
@@ -36,10 +39,29 @@ public static class WorldEditor
 
         // compare by id hash: resolving names would load WolvenKit's full name table
         var unlocked = garage.UnlockedVehicleArray?.Select(v => (ulong)v.VehicleID.RecordID).ToHashSet() ?? new HashSet<ulong>();
-        return s_vehicles.Value
-            .Select(record => new VehicleEntry(record, VehicleName(record), unlocked.Contains((ulong)(TweakDBID)record)))
+        var favorites = garage.UiFavoritedVehicles?.Select(v => (ulong)v.RecordID).ToHashSet() ?? new HashSet<ulong>();
+        return s_vehicles.Value.Concat(extraRecords ?? Enumerable.Empty<string>())
+            .Distinct()
+            .Select(record => new VehicleEntry(record, VehicleName(record), unlocked.Contains((ulong)(TweakDBID)record), favorites.Contains((ulong)(TweakDBID)record)))
             .OrderBy(v => v.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    /// <summary>Marks a vehicle as a favorite in the call-vehicle menu (or removes the mark).</summary>
+    public static void SetVehicleFavorite(SaveFileHelper save, string record, bool favorite)
+    {
+        var garage = Garage(save) ?? throw new InvalidOperationException("The save has no garage data.");
+        garage.UiFavoritedVehicles ??= new();
+        var id = (TweakDBID)record;
+        var existing = garage.UiFavoritedVehicles.FirstOrDefault(v => v.RecordID == id);
+        if (favorite && existing == null)
+        {
+            garage.UiFavoritedVehicles.Add(new vehicleGarageVehicleID { RecordID = id });
+        }
+        else if (!favorite && existing != null)
+        {
+            garage.UiFavoritedVehicles.Remove(existing);
+        }
     }
 
     public static void SetVehicleUnlocked(SaveFileHelper save, string record, bool unlocked)

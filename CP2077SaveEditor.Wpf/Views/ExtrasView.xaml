@@ -48,6 +48,13 @@
                         <Button Command="{Binding RemoveExpansionItemsCommand}" HorizontalAlignment="Left" Margin="0,10,0,0"
                                 Content="{Binding ExpansionItemCount}" ContentStringFormat="Remove Phantom Liberty items ({0} found)"
                                 ToolTip="Items whose records are tagged ep1 or come from Phantom Liberty quests (q301–q307). Items without those tags are not detected." />
+                        <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Margin="0,14,0,0" Padding="0,12,0,0">
+                            <StackPanel>
+                                <CheckBox Content="Allow Phantom Liberty items" Style="{StaticResource Switch}" IsChecked="{Binding AllowExpansionItems}" />
+                                <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" FontSize="11" Margin="0,6,0,0"
+                                           Text="Editor setting. When off, Add item greys out expansion items for saves without Phantom Liberty. Turning it on lets you add them anyway, but the game may crash if the expansion is not installed." />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ContentControl>
                 <ContentControl Style="{StaticResource Card}" Margin="0,0,8,16">

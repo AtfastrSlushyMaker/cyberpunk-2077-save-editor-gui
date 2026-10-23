@@ -123,7 +123,8 @@
                 <TextBlock Text="Select an item to edit it." Style="{StaticResource Dim}"
                            Visibility="{Binding HasSelection, Converter={StaticResource InverseBoolToVisibility}}" />
                 <StackPanel DataContext="{Binding SelectedItem}" Visibility="{Binding DataContext.HasSelection, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibility}}">
-                    <Border Height="120" Margin="0,0,0,12" Background="#0FFFFFFF" Visibility="{Binding Icon, Converter={StaticResource NullToCollapsed}}">
+                    <Border Height="120" Margin="0,0,0,12" Background="#0FFFFFFF" Visibility="{Binding Icon, Converter={StaticResource NullToCollapsed}}"
+                            Cursor="Hand" ToolTip="Click to enlarge" MouseLeftButtonUp="Preview_Click">
                         <Image Source="{Binding Icon}" Stretch="Uniform" Margin="8" RenderOptions.BitmapScalingMode="HighQuality" />
                     </Border>
                     <TextBlock Text="{Binding Name}" Style="{StaticResource H2}" FontSize="17" TextWrapping="Wrap" />

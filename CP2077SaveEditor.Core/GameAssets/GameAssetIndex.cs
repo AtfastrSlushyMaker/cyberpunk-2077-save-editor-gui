@@ -18,8 +18,15 @@ namespace CP2077SaveEditor.GameAssets;
 /// <summary>Where an item's icon is: a texture inside a game archive, and the icon's rectangle in UV coordinates.</summary>
 public sealed record IconRef(string Archive, ulong Texture, float Left, float Top, float Right, float Bottom);
 
-/// <summary>Real name and icon(s) of one item record. Clothing has separate male/female icons.</summary>
-public sealed record ItemAsset(string? Name, IconRef? Icon, IconRef? IconFemale);
+/// <summary>
+/// Real name, icon(s) and catalog details of one item record. Clothing has separate male/female icons. ItemType is the
+/// TweakDB item type without its prefix ("Wea_Revolver", "Clo_Head"), EquipArea likewise ("ArmsCW"), Quality is
+/// "Common" … "Legendary" (or "Random"), and Expansion marks Phantom Liberty content. Vehicles use ItemType for their
+/// kind ("Car", "Bike") and Manufacturer for the brand.
+/// </summary>
+public sealed record ItemAsset(string? Name, IconRef? Icon, IconRef? IconFemale,
+    string? ItemType = null, string? EquipArea = null, string? Quality = null, bool Iconic = false, bool Expansion = false,
+    string? Manufacturer = null);
 
 /// <summary>
 /// Item names and icon locations read from the player's own game installation (tweakdb.bin + archives), cached on disk
@@ -27,7 +34,7 @@ public sealed record ItemAsset(string? Name, IconRef? Icon, IconRef? IconFemale)
 /// </summary>
 public sealed class GameAssetIndex
 {
-    public const int FormatVersion = 1;
+    public const int FormatVersion = 3;
 
     public static string CacheRoot { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CP2077 Save Editor", "GameData");
@@ -36,6 +43,9 @@ public sealed class GameAssetIndex
     public string GameDir { get; set; } = "";
     public string BuildKey { get; set; } = "";
     public Dictionary<ulong, ItemAsset> Items { get; set; } = new();
+
+    /// <summary>Player vehicle records ("Vehicle.v_…_player") found in the game database; their details are in Items.</summary>
+    public List<string> VehicleRecords { get; set; } = new();
 
     public ItemAsset? Get(TweakDBID id) => Items.TryGetValue((ulong)id, out var a) ? a : null;
 
@@ -109,18 +119,51 @@ public sealed class GameAssetIndex
         var index = new GameAssetIndex { GameDir = gameDir, BuildKey = BuildKeyOf(gameDir) };
         foreach (var record in itemRecords)
         {
-            string? name = null;
-            if (Flat(db, record + ".displayName") is gamedataLocKeyWrapper key && names.TryGetValue((ulong)key, out var text))
+            if (Flat(db, record + ".displayName") is not gamedataLocKeyWrapper key)
             {
-                name = text;
+                continue; // not an item in this game version (removed or never finished)
             }
+            var name = names.TryGetValue((ulong)key, out var text) ? text : null;
 
             var male = ResolveIcon(db, record, "Male", archives, atlasCache);
             var female = ResolveIcon(db, record, "Female", archives, atlasCache);
-            if (name != null || male != null)
+            if (male == null && CraftedItem(db, record) is { } crafted)
             {
-                index.Items[(ulong)(TweakDBID)record] = new ItemAsset(name, male ?? female, female == male ? null : female);
+                // recipes show the icon of the item they craft
+                male = ResolveIcon(db, crafted, "Male", archives, atlasCache);
+                female = ResolveIcon(db, crafted, "Female", archives, atlasCache);
             }
+
+            var tags = Flat(db, record + ".tags") is IRedArray tagArray
+                ? tagArray.Cast<object>().OfType<CName>().Select(t => t.GetResolvedText() ?? "").ToList()
+                : new List<string>();
+            index.Items[(ulong)(TweakDBID)record] = new ItemAsset(name, male ?? female, female == male ? null : female,
+                ItemType: RecordSuffix(Flat(db, record + ".itemType")),
+                EquipArea: RecordSuffix(Flat(db, record + ".equipArea")),
+                Quality: RecordSuffix(Flat(db, record + ".quality")),
+                Iconic: tags.Contains("IconicWeapon") || tags.Contains("IconicItem"),
+                Expansion: tags.Any(t => t.StartsWith("EP1", StringComparison.OrdinalIgnoreCase)) || Editing.SaveFlags.IsExpansionRecord(record));
+        }
+
+        progress?.Report("Reading vehicles…");
+        var vehicleRecords = GameData.TweakDbStrings.GetAll().Select(kv => kv.Value)
+            .Where(n => n != null && n.StartsWith("Vehicle.v_") && n.EndsWith("_player") && n.IndexOf('.', 8) < 0)
+            .Distinct().ToList();
+        foreach (var record in vehicleRecords)
+        {
+            if (Flat(db, record + ".displayName") is not gamedataLocKeyWrapper key)
+            {
+                continue;
+            }
+            var tags = Flat(db, record + ".tags") is IRedArray tagArray
+                ? tagArray.Cast<object>().OfType<CName>().Select(t => t.GetResolvedText() ?? "").ToList()
+                : new List<string>();
+            index.Items[(ulong)(TweakDBID)record] = new ItemAsset(names.TryGetValue((ulong)key, out var text) ? text : null,
+                ResolveIcon(db, record, "Male", archives, atlasCache), null,
+                ItemType: RecordSuffix(Flat(db, record + ".type")),
+                Expansion: tags.Any(t => t.StartsWith("EP1", StringComparison.OrdinalIgnoreCase)) || Editing.SaveFlags.IsExpansionRecord(record),
+                Manufacturer: RecordSuffix(Flat(db, record + ".manufacturer")));
+            index.VehicleRecords.Add(record);
         }
 
         Directory.CreateDirectory(CacheDir(gameDir));
@@ -167,7 +210,10 @@ public sealed class GameAssetIndex
         var candidates = new List<string>();
         if (Flat(db, record + ".icon") is TweakDBID icon && (ulong)icon != (ulong)(TweakDBID)"UIIcon.ItemIcon" && (ulong)icon != 0)
         {
-            candidates.Add("#" + (ulong)icon);
+            if (RecordName(icon) is { } iconRecord)
+            {
+                candidates.Add(iconRecord);
+            }
         }
         if (S("iconPath") is { Length: > 0 } iconPath)
         {
@@ -189,13 +235,15 @@ public sealed class GameAssetIndex
         {
             candidates.Add($"UIIcon.clothing_{entity}_{an}_{gender}_");
             candidates.Add($"UIIcon.outfit_{entity}_{an}_{gender}_");
+            // items with a camera appearance suffix have their icon under the third-person appearance
+            candidates.Add($"UIIcon.clothing_{entity}_{an}_{gender}_TPP_");
+            candidates.Add($"UIIcon.outfit_{entity}_{an}_{gender}_TPP_");
         }
 
         foreach (var candidate in candidates)
         {
-            var flatPrefix = candidate.StartsWith('#') ? null : candidate;
-            var atlasValue = flatPrefix != null ? Flat(db, flatPrefix + ".atlasResourcePath") : null;
-            var partValue = flatPrefix != null ? Flat(db, flatPrefix + ".atlasPartName") : null;
+            var atlasValue = Flat(db, candidate + ".atlasResourcePath");
+            var partValue = Flat(db, candidate + ".atlasPartName");
             if (atlasValue is not IRedResourceAsyncReference atlasRef || partValue is not CName part)
             {
                 continue;
@@ -233,6 +281,18 @@ public sealed class GameAssetIndex
         }
         return null;
     }
+
+    /// <summary>Name of a TweakDB record id, from WolvenKit's string table (only loaded in the builder process).</summary>
+    private static string? RecordName(TweakDBID id) => GameData.TweakDbStrings.GetString((ulong)id) is { Length: > 0 } s ? s : null;
+
+    /// <summary>"Quality.Legendary" -> "Legendary"; null for an empty id.</summary>
+    private static string? RecordSuffix(IRedType? value) =>
+        value is TweakDBID id && (ulong)id != 0 && RecordName(id) is { } name ? name[(name.IndexOf('.') + 1)..] : null;
+
+    /// <summary>The item record a recipe crafts (recipe.craftingResult -> result.item), or null.</summary>
+    private static string? CraftedItem(TweakDB db, string record) =>
+        Flat(db, record + ".craftingResult") is TweakDBID result && RecordName(result) is { } resultRecord
+            && Flat(db, resultRecord + ".item") is TweakDBID item ? RecordName(item) : null;
 
     /// <summary>
     /// Flat lookup by id. TweakDB.GetFlatValue(string) scans all ~3M flats linearly; the pool lookup is a dictionary.

@@ -1,0 +1,99 @@
+<UserControl x:Class="CP2077SaveEditor.Wpf.Views.InfoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:CP2077SaveEditor.Wpf.ViewModels">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="28,24,20,24">
+        <StackPanel MaxWidth="960" HorizontalAlignment="Left">
+
+            <!-- Hero -->
+            <Grid Margin="0,0,0,24">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Rectangle Width="16" Height="16" Fill="{StaticResource AccentBrush}" Margin="2,0,16,0" VerticalAlignment="Center">
+                            <Rectangle.RenderTransform>
+                                <RotateTransform Angle="45" CenterX="8" CenterY="8" />
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                        <TextBlock Text="CP2077" Style="{StaticResource H1}" FontSize="34" />
+                        <TextBlock Text=" // SAVE EDITOR" Style="{StaticResource H1}" FontSize="34" Foreground="{StaticResource TextBrush}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Dim}" Margin="0,6,0,0" FontSize="13">
+                        <Run Text="{Binding Version, Mode=OneWay}" /><Run Text="  ·  A save editor for Cyberpunk 2077, patch 2.5" />
+                    </TextBlock>
+                </StackPanel>
+                <Button Content="VIEW ON GITHUB" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Command="{Binding OpenLinkCommand}" CommandParameter="{Binding RepositoryUrl}" />
+            </Grid>
+
+            <!-- Updates -->
+            <ContentControl Style="{StaticResource Card}" Margin="0,0,0,24">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="CHECK NOW" Command="{Binding CheckForUpdatesCommand}" Margin="0,0,8,0" />
+                        <Button Content="UPDATE NOW" Style="{StaticResource PrimaryButton}" Command="{Binding InstallUpdateCommand}"
+                                Visibility="{Binding HasUpdate, Converter={StaticResource BoolToVisibility}}" Margin="0,0,8,0" />
+                        <Button Content="RELEASES" Command="{Binding OpenReleasesCommand}" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="UPDATES" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,6" />
+                        <TextBlock Text="{Binding UpdateStatus}" FontSize="13" TextWrapping="Wrap" />
+                        <CheckBox Content="Check for updates when the editor starts" Style="{StaticResource Switch}" IsChecked="{Binding CheckOnStart}" Margin="0,10,0,0" />
+                    </StackPanel>
+                </DockPanel>
+            </ContentControl>
+
+            <!-- Credits -->
+            <TextBlock Text="BUILT ON" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,10" />
+            <ItemsControl ItemsSource="{Binding Credits}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="2" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:CreditEntry}">
+                        <Button Command="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding Url}"
+                                Cursor="Hand" Margin="0,0,12,12" ToolTip="{Binding Url}" HorizontalContentAlignment="Stretch">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="18,16">
+                                        <ContentPresenter />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PanelRaisedBrush}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <DockPanel>
+                                <Border DockPanel.Dock="Left" Width="44" Height="44" Background="{StaticResource AccentBrush}" Margin="0,0,16,0" VerticalAlignment="Top">
+                                    <TextBlock Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="20" Foreground="{StaticResource BgBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock DockPanel.Dock="Right" Text="&#xE8A7;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12"
+                                           Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Top" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource H2}" Foreground="{StaticResource TextBrush}" />
+                                    <TextBlock Text="{Binding Author}" Foreground="{StaticResource CyanBrush}" FontSize="12" Margin="0,2,0,6" />
+                                    <TextBlock Text="{Binding Role}" Style="{StaticResource Dim}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding Url}" FontFamily="{StaticResource MonoFont}" FontSize="10" Foreground="{StaticResource TextDimBrush}" Margin="0,8,0,0" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DockPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Legal -->
+            <ContentControl Style="{StaticResource Card}" Margin="0,12,12,0">
+                <StackPanel>
+                    <TextBlock Text="GAME DATA AND LICENSES" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,8" />
+                    <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" LineHeight="18"
+                               Text="Item names, icons and vehicle pictures are read from your own copy of the game; nothing from the game is shipped with the editor. They belong to CD PROJEKT RED. Cyberpunk 2077 is a trademark of CD PROJEKT S.A.; this project is not affiliated with or endorsed by CD PROJEKT RED. The editor's source code is MIT licensed; release builds include WolvenKit (GPL-3.0)." />
+                </StackPanel>
+            </ContentControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

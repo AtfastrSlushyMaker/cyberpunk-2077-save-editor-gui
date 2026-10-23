@@ -19,6 +19,14 @@ public partial class InventoryView : UserControl
         button.ContextMenu.IsOpen = true;
     }
 
+    private void Preview_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is InventoryViewModel { SelectedItem: { } row })
+        {
+            ImagePreviewWindow.Show(Window.GetWindow(this), row.Icon, row.Name, row.Record);
+        }
+    }
+
     private void Items_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Delete && DataContext is InventoryViewModel vm)
