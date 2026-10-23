@@ -341,3 +341,6 @@ healthchecksdb
 # Local build output and release packages
 publish/
 *.zip
+
+# Unused appearance photos from the original editor
+/previews/
