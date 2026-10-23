@@ -1,0 +1,79 @@
+<UserControl x:Class="CP2077SaveEditor.Wpf.Views.ExtrasView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="28,24,20,24">
+        <StackPanel MaxWidth="900" HorizontalAlignment="Left">
+            <TextBlock Text="EXTRAS" Style="{StaticResource H1}" />
+            <TextBlock Text="{Binding Notice}" Foreground="{StaticResource CyanBrush}" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Visibility="{Binding Notice, Converter={StaticResource NullToCollapsed}}" />
+
+            <UniformGrid Columns="2" Margin="0,16,0,0">
+                <ContentControl Style="{StaticResource Card}" Margin="0,0,8,16">
+                    <StackPanel>
+                        <TextBlock Text="MODDED SAVE FLAG (PATCH 2.5)" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,10" />
+                        <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,0,0,12"
+                                   Text="Saves made with mods enabled get a cog icon in Load Game, and on consoles cannot earn achievements. This switch sets or clears the mark in both places the game stores it." />
+                        <CheckBox Content="Marked as modded" Style="{StaticResource Switch}" IsChecked="{Binding IsModded}" />
+                        <TextBlock Text="{Binding ModdedDetails}" Style="{StaticResource Dim}" FontSize="10" TextWrapping="Wrap" Margin="0,10,0,0" FontFamily="{StaticResource MonoFont}" />
+                    </StackPanel>
+                </ContentControl>
+                <ContentControl Style="{StaticResource Card}" Margin="8,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="PHANTOM LIBERTY" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,10" />
+                        <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                   Text="Expansion content recorded for this save. Experimental: removing the flag does not remove the expansion's quests or world data." />
+                        <TextBlock Text="No expansion content recorded." FontStyle="Italic">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource Dim}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AdditionalContent.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <ItemsControl ItemsSource="{Binding AdditionalContent}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,0,0,6">
+                                        <Button DockPanel.Dock="Right" Content="Remove flag" Style="{StaticResource DangerButton}" Padding="10,4"
+                                                Command="{Binding DataContext.RemoveContentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
+                                        <TextBlock Text="{Binding}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Command="{Binding RemoveExpansionItemsCommand}" HorizontalAlignment="Left" Margin="0,10,0,0"
+                                Content="{Binding ExpansionItemCount}" ContentStringFormat="Remove Phantom Liberty items ({0} found)"
+                                ToolTip="Items whose records are tagged ep1 or come from Phantom Liberty quests (q301–q307). Items without those tags are not detected." />
+                    </StackPanel>
+                </ContentControl>
+                <ContentControl Style="{StaticResource Card}" Margin="0,0,8,16">
+                    <StackPanel>
+                        <TextBlock Text="FAST TRAVEL" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,10" />
+                        <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,0,0,12" Text="Unlock every fast travel terminal on the map." />
+                        <Button Content="Unlock all fast travel points" Command="{Binding UnlockFastTravelCommand}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </ContentControl>
+                <ContentControl Style="{StaticResource Card}" Margin="8,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="STUCK INVULNERABLE" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,10" />
+                        <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,0,0,12"
+                                   Text="Removes 'invulnerable' flags some quests or mods leave on V by mistake." />
+                        <Button Content="Make V vulnerable again" Command="{Binding MakeVulnerableCommand}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </ContentControl>
+                <ContentControl Style="{StaticResource Card}" Margin="0,0,8,16">
+                    <StackPanel>
+                        <TextBlock Text="EXTRA WARDROBE SLOTS (MOD)" Style="{StaticResource Label}" Foreground="{StaticResource AccentBrush}" FontSize="12" Margin="0,0,0,10" />
+                        <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,0,0,12"
+                                   Text="Clears the item blacklist of the Extra Wardrobe Slots mod. Only available when the save uses that mod." />
+                        <Button Content="Clear wardrobe blacklist" Command="{Binding ClearWardrobeBlacklistCommand}" IsEnabled="{Binding HasExtraWardrobe}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </ContentControl>
+            </UniformGrid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
